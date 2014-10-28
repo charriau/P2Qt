@@ -5,6 +5,7 @@ import sys
 from PySide import QtCore 
 from PySide import QtGui 
 
+
 import interface_prospero
 import re
 import datetime
@@ -34,7 +35,7 @@ class client(object):
 		return var
 	
 	def recup_ents(self):
-		var = "$ent[0:100]"
+		var = "$ent[0:1000]"
 		ents = self.c.eval_variable(var)
 		self.ents = re.split(", ",ents)
 		return var
@@ -51,6 +52,12 @@ class client(object):
 
 	def eval_var(self,var):
 		self.eval_var_result = self.c.eval_variable(var)
+		return re.split(", ",self.eval_var_result) 
+	# jp : pour retrouver la sémantique d'un élément : (getsem 'nucléaire' $ent )
+	def eval_get_sem(self,exp,type):
+		exp = exp.encode('utf-8')
+		self.eval_var_result = self.c.eval_fonc("getsem:" + exp + ":" + type)
+		return self.eval_var_result  
 
 class Principal(QtGui.QMainWindow):
 	def __init__(self):
@@ -147,7 +154,7 @@ class Principal(QtGui.QMainWindow):
 
 		self.SOT1 = QtGui.QListWidget()
 
-		SOT2 =  QtGui.QLabel()
+		#SOT2 =  QtGui.QLabel()
 #		NetworkImage = QtGui.QPixmap("network.png")
 #		SOT2.setPixmap(NetworkImage)
 
@@ -155,8 +162,15 @@ class Principal(QtGui.QMainWindow):
 #		EnglImage = QtGui.QPixmap("engl.png")
 #		SOT3.setPixmap(EnglImage)
 
+		#jp réseau
+		self.SOT2 =  QtGui.QListWidget()
+		#
+
+
 		SubWdwSO = QtGui.QTabWidget()
 		SubWdwSO.addTab(self.SOT1,"Texts")
+		#jp réseau
+		SubWdwSO.addTab(self.SOT2,"Networks")
 #		SubWdwSO.addTab(SOT2,"Network")
 #		SubWdwSO.addTab(SOT3,"Expressions englobantes")
 
@@ -217,12 +231,12 @@ class Principal(QtGui.QMainWindow):
 #		T4.setPixmap(viewImage)
 
 #mise en place des onglets
-		self.SubWdwNE = QtGui.QTabWidget()
-		self.SubWdwNE.addTab(Param_Server,"Server parameters")
+		SubWdwNE = QtGui.QTabWidget()
+		SubWdwNE.addTab(Param_Server,"Server parameters")
 #		SubWdwNE.addTab(T4,"Viewer")
 #		SubWdwNE.addTab(NET1,"Marlowe")
-		self.SubWdwNE.addTab(self.History,"History")
-		self.SubWdwNE.addTab(server_vars,"Server vars")
+		SubWdwNE.addTab(self.History,"History")
+		SubWdwNE.addTab(server_vars,"Server vars")
 
 		#quart NO
 
@@ -260,7 +274,17 @@ class Principal(QtGui.QMainWindow):
 		NOT1V.addLayout(NOT1VH) 
 	#la liste
 		self.NOT12 = QtGui.QListWidget()
+		
+		
 		NOT1VH.addWidget(self.NOT12)
+		
+		# try un listview multi colonnes
+		self.NOT122 = QtGui.QListView()
+		
+		NOT1VH.addWidget(self.NOT122)
+	#jp signal associé
+		self.NOT12.itemActivated.connect(self.item_activated)
+		
 	#le deploiement
 		self.NOT12_D = QtGui.QListWidget()
 		NOT1VH.addWidget(self.NOT12_D)
@@ -283,7 +307,7 @@ class Principal(QtGui.QMainWindow):
 		Area = QtGui.QMdiArea()
 		sw1 = Area.addSubWindow(SubWdwSE, flags = QtCore.Qt.FramelessWindowHint)
 		sw2 = Area.addSubWindow(SubWdwSO, flags = QtCore.Qt.FramelessWindowHint)
-		sw3 = Area.addSubWindow(self.SubWdwNE , flags = QtCore.Qt.FramelessWindowHint)
+		sw3 = Area.addSubWindow(SubWdwNE , flags = QtCore.Qt.FramelessWindowHint)
 		sw4 = Area.addSubWindow(SubWdwNO , flags = QtCore.Qt.FramelessWindowHint)
 	
 
@@ -291,9 +315,40 @@ class Principal(QtGui.QMainWindow):
 
 		self.setCentralWidget(Area)
 				
-		self.setWindowTitle(u'Prospéro II 27/10/2014')    
+		self.setWindowTitle(u'Prospéro II 25/10/2014')    
 		self.showMaximized() 
+	#jp
+	def get_type(self):
+		print self.NOT1select.currentText()
+		if self.NOT1select.currentText()=="entities" : return '$ent'
+		if self.NOT1select.currentText()=="collections" : return '$col'
+		if self.NOT1select.currentText()=="fictions" : return '$ef'
+		return ''
+	def item_activated(self):
 
+		type = self.get_type()
+
+		if not type : return
+		print "type :" + type
+		exp = self.NOT12.currentItem().text()
+		print "exp  " +  exp
+		semantique = self.client.eval_get_sem(exp, type)
+		print  "----> " , semantique 
+		self.update_networks ( exp, semantique)
+		
+		
+	def update_networks (self, exp,semantique):
+		"""
+			$ent10 --> $ent10.res[0:200]
+			$col1	---> $col1.res[0:200]
+		"""
+		self.SOT2.clear()
+		
+		res_semantique = semantique + ".res[0:200]"
+		content = self.client.eval_var(res_semantique)
+		self.SOT2.addItems(content)
+		
+		
 	def activity(self,message):
 		self.status.showMessage(message)
 		self.History.append("%s: %s" % (datetime.datetime.now(),message))
@@ -353,8 +408,6 @@ class Principal(QtGui.QMainWindow):
 			self.recup_liste_textes()
 			self.Param_Server_B.clicked.connect(self.disconnect_server)
 			self.Param_Server_B.setText("Disconnect")
-			# donne le focus a l'onglet history (si il a l'index 1)
-			self.SubWdwNE.setCurrentIndex(1)
 	
 	def disconnect_server(self):
 		self.activity("Disconnecting")
