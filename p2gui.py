@@ -283,20 +283,25 @@ class Principal(QtGui.QMainWindow):
 		self.NOT12.itemActivated.connect(self.item_activated)		
 		
 		NOT1VH.addWidget(self.NOT12)
-		
-		# try un listview multi colonnes
-		self.NOT122 = QtGui.QListView()
-		
+
 	# test modele/vue pour visualiser les scores avec les éléments ( 2 colonnes)
 		
 		self.modele =  QtGui.QStandardItemModel(5,2);
-		self.modele.setHorizontalHeaderLabels(["score" , "Element"])
+		
+		header_item1 =QtGui.QStandardItem(u"score")
+		self.modele.setHorizontalHeaderItem(0, header_item1);
+		header_item2 =QtGui.QStandardItem(u"éléments")
+
+		self.modele.setHorizontalHeaderItem(1, header_item2);
+		
 		self.vue = QtGui.QTableView()
+		self.vue.horizontalHeader
+		
 		self.vue.setModel(self.modele)
+		
+		self.vue.horizontalHeader().setResizeMode(QtGui.QHeaderView.ResizeToContents) 
 		NOT1VH.addWidget(self.vue)
 		
-		#item = QtGui.QStandardItem("coucou")
-		#modele.setItem(3,1,item)
 	#le deploiement
 		self.NOT12_D = QtGui.QListWidget()
 		NOT1VH.addWidget(self.NOT12_D)
