@@ -45,7 +45,11 @@ class client(object):
 		efs = self.c.eval_variable(var)
 		self.efs = re.split(", ",efs) 
 		return var
-	
+	def recup_cat_ent(self):
+		var = "$cat_ent[0:]"
+		efs = self.c.eval_variable(var)
+		self.categorie_ent = re.split(", ",efs) 
+		return var
 	def recup_texts(self):
 		txts = self.c.eval_variable("$txt[0:]")
 		self.txts = re.split(", ",txts)
@@ -259,6 +263,7 @@ class Principal(QtGui.QMainWindow):
 		self.NOT1select.addItem(u"collections")
 		self.NOT1select.addItem(u"entities")
 		self.NOT1select.addItem(u"fictions")
+		self.NOT1select.addItem(u"entitie's categories")
 		NOT1VHC.addWidget(self.NOT1select)
 		self.connect(self.NOT1select,QtCore.SIGNAL("currentIndexChanged(const QString)"), self.select_liste)
 	# les commandes
@@ -274,17 +279,24 @@ class Principal(QtGui.QMainWindow):
 		NOT1V.addLayout(NOT1VH) 
 	#la liste
 		self.NOT12 = QtGui.QListWidget()
-		
+	#jp signal associé  ( là par un double click
+		self.NOT12.itemActivated.connect(self.item_activated)		
 		
 		NOT1VH.addWidget(self.NOT12)
 		
 		# try un listview multi colonnes
 		self.NOT122 = QtGui.QListView()
 		
-		NOT1VH.addWidget(self.NOT122)
-	#jp signal associé
-		self.NOT12.itemActivated.connect(self.item_activated)
+	# test modele/vue pour visualiser les scores avec les éléments ( 2 colonnes)
 		
+		self.modele =  QtGui.QStandardItemModel(5,2);
+		self.modele.setHorizontalHeaderLabels(["score" , "Element"])
+		self.vue = QtGui.QTableView()
+		self.vue.setModel(self.modele)
+		NOT1VH.addWidget(self.vue)
+		
+		#item = QtGui.QStandardItem("coucou")
+		#modele.setItem(3,1,item)
 	#le deploiement
 		self.NOT12_D = QtGui.QListWidget()
 		NOT1VH.addWidget(self.NOT12_D)
@@ -323,6 +335,8 @@ class Principal(QtGui.QMainWindow):
 		if self.NOT1select.currentText()=="entities" : return '$ent'
 		if self.NOT1select.currentText()=="collections" : return '$col'
 		if self.NOT1select.currentText()=="fictions" : return '$ef'
+		if self.NOT1select.currentText()=="entitie's categories" : return '$cat_ent'
+		
 		return ''
 	def item_activated(self):
 
@@ -345,6 +359,7 @@ class Principal(QtGui.QMainWindow):
 		self.SOT2.clear()
 		
 		res_semantique = semantique + ".res[0:200]"
+		self.activity(u"Waiting for " + res_semantique )
 		content = self.client.eval_var(res_semantique)
 		self.SOT2.addItems(content)
 		
@@ -376,7 +391,10 @@ class Principal(QtGui.QMainWindow):
 			self.activity(u"Waiting for  %s list" % (typ)) 
 			var = self.client.recup_efs()
 			content = self.client.efs
-			
+		elif (typ == "entitie's categories"):
+			self.activity(u"Waiting for  %s list" % (typ)) 
+			var = self.client.recup_cat_ent()
+			content = self.client.categorie_ent
 		if len(content):
 			self.activity(u"Displaying %s list (%d items)" % (typ,len(content)))
 		else :
@@ -386,6 +404,27 @@ class Principal(QtGui.QMainWindow):
 	def change_liste(self,content):
 		self.NOT12.clear()
 		self.NOT12.addItems(content)
+		#jp test modele/vue
+		r=0
+		type = self.get_type()
+		for element in content :
+			item = QtGui.QStandardItem(element)
+			self.modele.setItem(r,1,item)
+			
+			
+			semantique = self.client.eval_get_sem(element,type)
+			# $ent10
+			# poids !  $ent10.val
+			sem_poids = semantique + ".val" 
+			valeur = self.client.eval_var(sem_poids)[0]
+			
+			item = QtGui.QStandardItem(valeur)
+			self.modele.setItem(r,0,item)
+			
+			r+=1
+		
+		
+		
 		
 	def server_vars_Evalue(self):
 		var = self.server_vars_champ.text()
