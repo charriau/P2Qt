@@ -58,9 +58,9 @@ class client(object):
 		self.eval_var_result = self.c.eval_variable(var)
 		return re.split(", ",self.eval_var_result) 
 	# jp : pour retrouver la sémantique d'un élément : (getsem 'nucléaire' $ent )
-	def eval_get_sem(self,exp,type):
+	def eval_get_sem(self,exp,sem):
 		exp = exp.encode('utf-8')
-		self.eval_var_result = self.c.eval_fonc("getsem:" + exp + ":" + type)
+		self.eval_var_result = self.c.eval_fonc("getsem:" + exp + ":" + sem)
 		return self.eval_var_result  
 
 class Principal(QtGui.QMainWindow):
@@ -168,13 +168,34 @@ class Principal(QtGui.QMainWindow):
 
 		#jp réseau
 		self.SOT2 =  QtGui.QListWidget()
-		#
+		# visualisation des textes d'un élément sélectionné
+		
+		self.modeletext =  QtGui.QStandardItemModel(5,2);
+		
+		header_item1 =QtGui.QStandardItem(u"score")
+		self.modeletext.setHorizontalHeaderItem(0, header_item1);
+		header_item2 =QtGui.QStandardItem(u"textes")
+
+		self.modeletext.setHorizontalHeaderItem(1, header_item2);
+		
+		#self.vuetexts= QtGui.QTableView()
+		self.SOT3= QtGui.QTableView()
+		
+		
+		self.SOT3.setModel(self.modeletext)
+		
+		self.SOT3.horizontalHeader().setResizeMode(QtGui.QHeaderView.ResizeToContents) 
+		###NOT1VH.addWidget(self.vue)
+
+
+
 
 
 		SubWdwSO = QtGui.QTabWidget()
 		SubWdwSO.addTab(self.SOT1,"Texts")
 		#jp réseau
 		SubWdwSO.addTab(self.SOT2,"Networks")
+		SubWdwSO.addTab(self.SOT3,"Texts of element")
 #		SubWdwSO.addTab(SOT2,"Network")
 #		SubWdwSO.addTab(SOT3,"Expressions englobantes")
 
@@ -279,8 +300,9 @@ class Principal(QtGui.QMainWindow):
 		NOT1V.addLayout(NOT1VH) 
 	#la liste
 		self.NOT12 = QtGui.QListWidget()
-	#jp signal associé  ( là par un double click
-		self.NOT12.itemActivated.connect(self.item_activated)		
+	#jp signal associé  ( là par un double click itemActivated
+	# itemChanged  itemClicked
+		self.NOT12.itemClicked.connect(self.item_clicked)		
 		
 		NOT1VH.addWidget(self.NOT12)
 
@@ -295,11 +317,12 @@ class Principal(QtGui.QMainWindow):
 		self.modele.setHorizontalHeaderItem(1, header_item2);
 		
 		self.vue = QtGui.QTableView()
-		self.vue.horizontalHeader
+		#self.vue = QtGui.QListView()
+		#self.vue.horizontalHeader
 		
 		self.vue.setModel(self.modele)
 		
-		self.vue.horizontalHeader().setResizeMode(QtGui.QHeaderView.ResizeToContents) 
+		#self.vue.horizontalHeader().setResizeMode(QtGui.QHeaderView.ResizeToContents) 
 		NOT1VH.addWidget(self.vue)
 		
 	#le deploiement
@@ -335,7 +358,7 @@ class Principal(QtGui.QMainWindow):
 		self.setWindowTitle(u'Prospéro II 25/10/2014')    
 		self.showMaximized() 
 	#jp
-	def get_type(self):
+	def get_semantique(self):
 		print self.NOT1select.currentText()
 		if self.NOT1select.currentText()=="entities" : return '$ent'
 		if self.NOT1select.currentText()=="collections" : return '$col'
@@ -343,18 +366,21 @@ class Principal(QtGui.QMainWindow):
 		if self.NOT1select.currentText()=="entitie's categories" : return '$cat_ent'
 		
 		return ''
-	def item_activated(self):
+	def item_clicked(self):
+		"""
+			suite au changement de sélecdtion d'un élément , mettre à jour
+			les vues dépendantes ( Networks, texts )
+		"""
+		sem = self.get_semantique()
 
-		type = self.get_type()
+		if not sem : return
 
-		if not type : return
-		print "type :" + type
 		exp = self.NOT12.currentItem().text()
-		print "exp  " +  exp
-		semantique = self.client.eval_get_sem(exp, type)
-		print  "----> " , semantique 
+
+		semantique = self.client.eval_get_sem(exp, sem)
+
 		self.update_networks ( exp, semantique)
-		
+		self.update_texts_of_element(exp,semantique)
 		
 	def update_networks (self, exp,semantique):
 		"""
@@ -367,7 +393,38 @@ class Principal(QtGui.QMainWindow):
 		self.activity(u"Waiting for " + res_semantique )
 		content = self.client.eval_var(res_semantique)
 		self.SOT2.addItems(content)
+	def update_texts_of_element(self,exp,semantique):
+		'''
+			pas fini !
+		'''
+		self.modeletext.clear()
 		
+		txt_semantique = semantique + ".txt[0:]"
+		self.activity(u"Waiting for " + txt_semantique )
+		content = self.client.eval_var(txt_semantique)
+		
+		r=0
+		sem = self.get_semantique()
+		# on part de $entX.txtY  pour vouloir $entX.txtY.val
+		# semantique == $entX
+		# content est une liste d'adresses de texte ordonnée
+		r = 0	# donnera le Y 
+		for element in content :
+			item = QtGui.QStandardItem(element)
+			self.modeletext.setItem(r,1,item)
+			
+			
+			txt_semantique = semantique +".txt"+str(r)
+			# $ent10
+			# poids !  $ent10.val
+			sem_poids = txt_semantique + ".val" 
+			valeur = self.client.eval_var(sem_poids)[0]
+			print "sem :" , sem_poids , "   =  ", valeur
+			item = QtGui.QStandardItem(valeur)
+			self.modeletext.setItem(r,0,item)
+			
+			r=r+1
+			
 		
 	def activity(self,message):
 		self.status.showMessage(message)
@@ -411,13 +468,13 @@ class Principal(QtGui.QMainWindow):
 		self.NOT12.addItems(content)
 		#jp test modele/vue
 		r=0
-		type = self.get_type()
+		sem = self.get_semantique()
 		for element in content :
 			item = QtGui.QStandardItem(element)
 			self.modele.setItem(r,1,item)
 			
 			
-			semantique = self.client.eval_get_sem(element,type)
+			semantique = self.client.eval_get_sem(element,sem)
 			# $ent10
 			# poids !  $ent10.val
 			sem_poids = semantique + ".val" 
@@ -467,3 +524,4 @@ def main():
 
 if __name__ == '__main__':
 	main()
+
