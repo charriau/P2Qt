@@ -59,7 +59,8 @@ class client(object):
 	# jp : pour retrouver la sémantique d'un élément : (getsem 'nucléaire' $ent )
 	def eval_get_sem(self,exp,sem):
 		exp = exp.encode('utf-8')
-		self.eval_var_result = self.c.eval_fonc("getsem:" + exp + ":" + sem)
+		#self.eval_var_result = self.c.eval_fonc("getsem:" + exp + ":" + sem)
+		self.eval_var_result = self.c.new_eval_fonc("getsem" , exp  , sem)
 		return self.eval_var_result  
 
 class Principal(QtGui.QMainWindow):
