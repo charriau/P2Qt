@@ -5,7 +5,6 @@ import sys
 from PySide import QtCore 
 from PySide import QtGui 
 
-
 import interface_prospero
 import re
 import datetime
@@ -162,7 +161,7 @@ class Principal(QtGui.QMainWindow):
 #		NetworkImage = QtGui.QPixmap("network.png")
 #		SOT2.setPixmap(NetworkImage)
 
-		SOT3 =  QtGui.QLabel()
+		#SOT3 =  QtGui.QLabel()
 #		EnglImage = QtGui.QPixmap("engl.png")
 #		SOT3.setPixmap(EnglImage)
 
@@ -180,8 +179,8 @@ class Principal(QtGui.QMainWindow):
 		
 		#self.vuetexts= QtGui.QTableView()
 		self.SOT3= QtGui.QTableView()
-		
-		
+		#self.SOT3.clicked.connect(self.item_text_activated)
+		self.SOT3.clicked.connect(self.clicked)
 		self.SOT3.setModel(self.modeletext)
 		
 		self.SOT3.horizontalHeader().setResizeMode(QtGui.QHeaderView.ResizeToContents) 
@@ -317,6 +316,7 @@ class Principal(QtGui.QMainWindow):
 		self.modele.setHorizontalHeaderItem(1, header_item2);
 		
 		self.vue = QtGui.QTableView()
+		
 		#self.vue = QtGui.QListView()
 		#self.vue.horizontalHeader
 		
@@ -366,6 +366,11 @@ class Principal(QtGui.QMainWindow):
 		if self.NOT1select.currentText()=="entitie's categories" : return '$cat_ent'
 		
 		return ''
+	def get_semantique_text(self):
+		'''
+			la semantique du texte sélectionné
+		'''
+		
 	def item_clicked(self):
 		"""
 			suite au changement de sélecdtion d'un élément , mettre à jour
@@ -393,6 +398,29 @@ class Principal(QtGui.QMainWindow):
 		self.activity(u"Waiting for " + res_semantique )
 		content = self.client.eval_var(res_semantique)
 		self.SOT2.addItems(content)
+		
+	def acces_enonce(self):
+		'''
+			test
+			entité + 1 texte sélectionné (double click)
+		'''
+		
+		return
+	def clicked(self, index):
+		item = self.modeletext.itemFromIndex(index)
+		print "txt  " , item.text()
+		sem_txt =  self.client.eval_get_sem(item.text(),"$txt" )
+		print "sem_txt" ,sem_txt
+		
+		
+	def item_text_activated(self):
+		print "item_text_activated"
+		selection = self.SOT3.selectionModel()
+		index = selection.currentIndex()
+		print "index" , index
+		elementSelectionne =  self.modeletext.data(Qt.DisplayRole)
+		print elementSelectionne.toString()
+
 	def update_texts_of_element(self,exp,semantique):
 		'''
 			pas fini !
@@ -524,4 +552,3 @@ def main():
 
 if __name__ == '__main__':
 	main()
-
