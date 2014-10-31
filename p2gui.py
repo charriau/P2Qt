@@ -370,6 +370,7 @@ class Principal(QtGui.QMainWindow):
 		'''
 			la semantique du texte sélectionné
 		'''
+		return ''
 		
 	def item_clicked(self):
 		"""
