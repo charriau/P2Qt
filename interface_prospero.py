@@ -1,7 +1,7 @@
 # -*- coding: ISO-8859-1 -*-
 """
 Created on 5 mars 2012
-
+modifi� 3 /11/2014
 @author: jean-pierre Charriau
 
 module de communication avec un serveur P-II pour l'évaluation des variables mrlw dont le rendu/l'évaluation dépend des calculs de P-II
