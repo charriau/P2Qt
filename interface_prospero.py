@@ -280,10 +280,10 @@ class ConnecteurPII (threading.Thread):
 		try:
 			taille = self.connexion.recv(10)
 			taille_mess = int(taille)
-			print taille_mess
+
 			#data = self.connexion.recv(taille_mess)
 			data = self.connexion.makefile().read(taille_mess)
-			print "-->" , data
+
 		except :
 			print "get_value() echec connexion  ressaye"
 			if not self.connect(): # on ressaye
@@ -304,11 +304,8 @@ class ConnecteurPII (threading.Thread):
 			elif data == "SNone": # "SNone"
 				data = ""
 			else: # "Sxxxxxx"
-				print "taille OOO-> ", len(data)
 				data = data[1:]
-				print "taille -> ", len(data)
-				print data
-				print data[-4:]
+
 		data = data.decode('utf-8')	
 		return data					
 		

@@ -343,7 +343,7 @@ class Principal(QtGui.QMainWindow):
 	#une liste deroulante pour choisir le contenu de la liste
 		self.NOT1select = QtGui.QComboBox()
 		self.NOT1select.addItem(u"collections")
-		#self.NOT1select.addItem(u"entities") # trop long a répondre
+		self.NOT1select.addItem(u"entities") # trop long a répondre
 		self.NOT1select.addItem(u"fictions")
 		self.NOT1select.addItem(u"entitie's categories")
 		NOT1VHC.addWidget(self.NOT1select)
@@ -387,7 +387,9 @@ class Principal(QtGui.QMainWindow):
 		self.NOT12.setFont(QtGui.QFont("DejaVu Sans", 11))
 		#pas de header de ligne
 		self.NOT12.verticalHeader().setVisible(False)
-		
+		# test
+		self.scroll12 = self.NOT12.verticalScrollBar()
+		self.scroll12.valueChanged.connect(self.scroll12_valueChanged)
 		#selection d'un item
 		self.NOT12.itemClicked.connect(self.liste_item_clicked)
 
@@ -507,6 +509,48 @@ class Principal(QtGui.QMainWindow):
 		val = self.client.eval_var(sem)
 		return val
 	#</jp>
+	def scroll12_valueChanged(self, top_row):
+		'''
+		
+		pour mettre à jour la colonne score ( ne calculer le score que de ce qui doit être affiché )
+		
+		'''
+		self.sem_liste_concept = self.get_semantique()
+		print self.sem_liste_concept
+		content = self.client.recup_liste_concept(self.sem_liste_concept)
+		
+		print top_row
+		print "top_row content" , content[top_row]
+		header = self.NOT12.verticalHeader()
+		height = self.NOT12.height()
+		bottomRow = header.visualIndexAt(height)
+		print "bottomRow",bottomRow
+		bottomContent  = content[bottomRow]
+		print "bottome content" ,bottomContent
+
+		r = bottomRow
+		sem = self.sem_liste_concept
+
+		print "de ", top_row , " à  " , bottomRow
+		for row in range (top_row,bottomRow + 1):
+			#print row
+			contentRow = content[row]
+			if ( sem  == "$col" or sem == "$ef"  or sem == "$ent")  :
+				# recupere la designation semantique de l'element
+				semantique_item = self.client.eval_get_sem(contentRow, sem )
+				# récuperer le score
+
+				self.client.eval_var("%s.val"% semantique_item)
+				score =  self.client.eval_var_result
+				# si rien en score
+				widget_item = self.NOT12.item(row,0)
+				if  not widget_item :
+					itemwidget = QtGui.QTableWidgetItem(score)
+					itemwidget.setFlags(QtCore.Qt.ItemIsEnabled|QtCore.Qt.ItemIsSelectable)
+					self.NOT12.setItem(row,0,itemwidget)
+				else:
+					print "deja fait",row
+		print "***************************"
 	def select_liste(self,typ):
 		""" quand un type de liste est selectionné """
 			
@@ -525,20 +569,25 @@ class Principal(QtGui.QMainWindow):
 		self.NOT12.setColumnCount(2)
 		self.NOT12.setHorizontalHeaderLabels(['Score','Object'])
 
+		max = 20
+		i=0
 		row = 0 
 		for item in content:
 			itemwidget = QtGui.QTableWidgetItem(item)
 			itemwidget.setFlags(QtCore.Qt.ItemIsEnabled|QtCore.Qt.ItemIsSelectable) #non-editable
-
-			#C'EST TROP LENT !!!!! C'EST PAS DANS L'ORDRE !!!!
-			#semantique = self.client.eval_get_sem(item,self.sem_liste_concept) #NE RENVOIE PAS $col2 sur AaC, pb sur le dico, manque type ?
-			#sem_poids = semantique + ".val" 
-			#self.client.eval_var(sem_poids)	
-			#itemwidgetS = QtGui.QTableWidgetItem(self.client.eval_var_result)
-			#itemwidgetS.setFlags(QtCore.Qt.ItemIsEnabled|QtCore.Qt.ItemIsSelectable) #non editable
-
-			#self.NOT12.setItem(row,0,itemwidgetS) 
 			self.NOT12.setItem(row,1,itemwidget)
+			#C'EST TROP LENT !!!!! C'EST PAS DANS L'ORDRE !!!!
+			if i < max:
+				semantique = self.client.eval_get_sem(item,self.sem_liste_concept) #NE RENVOIE PAS $col2 sur AaC, pb sur le dico, manque type ?
+				sem_poids = semantique + ".val" 
+				self.client.eval_var(sem_poids)	
+				itemwidgetS = QtGui.QTableWidgetItem(self.client.eval_var_result)
+				itemwidgetS.setFlags(QtCore.Qt.ItemIsEnabled|QtCore.Qt.ItemIsSelectable) #non editable
+
+				self.NOT12.setItem(row,0,itemwidgetS) 
+				i = i + 1
+			if self.NOT12.isRowHidden(row):
+				print "masqué ", row
 			row += 1
 
 		self.NOT12.resizeColumnToContents(0)
