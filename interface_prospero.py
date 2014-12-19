@@ -183,6 +183,31 @@ class ConnecteurPII (threading.Thread):
 		self.m_cache_fonc[data] = value
 	def add_cache_index(self, data, value):
 		self.m_cache_index[data] = value
+	def eval_fonct (self, fonc, element,sem):
+		"""
+			cas du getsem : on interroge P-II pour obtenir la s�mantique avec indice
+			 d'un �l�ment ( on fournit la s�mantique ..)
+		"""
+		
+		self.m_threadlock.acquire()
+		'''  
+		if data in self.m_cache_fonc.keys():
+			self.m_threadlock.release()
+			return self.m_cache_fonc[data]
+		'''
+		
+		if not self.connexion : 
+			if not self.connect():
+				self.m_threadlock.release()
+				return ""
+		lexpr = self.creer_msg_fonct(fonc , element, sem)
+		for exp in lexpr :
+			self.send_expression(exp)
+		value = self.get_value()
+		#self.add_cache_fonc(data, value)
+		self.m_threadlock.release()
+		return value
+
 	def eval_fonc(self, data):
 		"""
 			cas du getsem : on interroge P-II pour obtenir la s�mantique exacte d'un �l�ment
@@ -375,7 +400,30 @@ class ConnecteurPII (threading.Thread):
 			if not self.connect():
 				print "acces P-II impossible"
 				return 
-	
+	def creer_msg_fonct(selfself,fonc,element,sem):
+		"""
+		
+			pour l'appel de getsem + ARG
+			FONC:getsem
+			ARG:pirate
+			ARG:$entef
+			F
+			
+			bogue : 
+				c:corpus
+				$txt
+				le : est maltrait� dans le split
+				
+		
+		"""	
+		
+		lexpr = []
+		lexpr.append("FONC:" +fonc)
+		lexpr.append("ARG:" +element)
+		lexpr.append("ARG:" +sem)
+		lexpr.append('F')
+		print lexpr
+		return lexpr
 	def creer_msg_fonc(self, data):
 		"""
 		
@@ -384,6 +432,12 @@ class ConnecteurPII (threading.Thread):
 			ARG:pirate
 			ARG:$entef
 			F
+			
+			bogue : 
+				c:corpus
+				$txt
+				le : est maltrait� dans le split
+				
 		
 		"""	
 		L = data.split(":")

@@ -46,8 +46,9 @@ class client(object):
 	def eval_get_sem(self,exp,sem):
 		# jp : pour retrouver la sémantique d'un élément : (getsem 'nucléaire' $ent )
 		exp = exp.encode('utf-8')
-		return self.c.eval_fonc("getsem:%s:%s" % (  exp , sem) )
-
+		#return self.c.eval_fonc("getsem:%s:%s" % (  exp , sem) )
+		print "--> ", exp, "   " , sem
+		return self.c.eval_fonct(u"getsem" , exp , sem )
 
 class Principal(QtGui.QMainWindow):
 	def __init__(self):
@@ -516,17 +517,17 @@ class Principal(QtGui.QMainWindow):
 		
 		'''
 		self.sem_liste_concept = self.get_semantique()
-		print self.sem_liste_concept
+		#print self.sem_liste_concept
 		content = self.client.recup_liste_concept(self.sem_liste_concept)
 		
-		print top_row
-		print "top_row content" , content[top_row]
+		#print top_row
+		#print "top_row content" , content[top_row]
 		header = self.NOT12.verticalHeader()
 		height = self.NOT12.height()
 		bottomRow = header.visualIndexAt(height)
-		print "bottomRow",bottomRow
+		#print "bottomRow",bottomRow
 		bottomContent  = content[bottomRow]
-		print "bottome content" ,bottomContent
+		#print "bottome content" ,bottomContent
 
 		r = bottomRow
 		sem = self.sem_liste_concept
@@ -535,6 +536,7 @@ class Principal(QtGui.QMainWindow):
 		for row in range (top_row,bottomRow + 1):
 			#print row
 			contentRow = content[row]
+			
 			if ( sem  == "$col" or sem == "$ef"  or sem == "$ent")  :
 				# recupere la designation semantique de l'element
 				semantique_item = self.client.eval_get_sem(contentRow, sem )
@@ -542,14 +544,19 @@ class Principal(QtGui.QMainWindow):
 
 				self.client.eval_var("%s.val"% semantique_item)
 				score =  self.client.eval_var_result
+				print row, "  ", semantique_item, "  " , contentRow, "    " , score
 				# si rien en score
 				widget_item = self.NOT12.item(row,0)
+				if widget_item and not widget_item.text():
+					print "/////"
+					itemwidget = QtGui.QTableWidgetItem(score)
+					itemwidget.setFlags(QtCore.Qt.ItemIsEnabled|QtCore.Qt.ItemIsSelectable)
+					self.NOT12.setItem(row,0,itemwidget)
 				if  not widget_item :
 					itemwidget = QtGui.QTableWidgetItem(score)
 					itemwidget.setFlags(QtCore.Qt.ItemIsEnabled|QtCore.Qt.ItemIsSelectable)
 					self.NOT12.setItem(row,0,itemwidget)
-				else:
-					print "deja fait",row
+
 		print "***************************"
 	def select_liste(self,typ):
 		""" quand un type de liste est selectionné """
@@ -759,7 +766,7 @@ class Principal(QtGui.QMainWindow):
 			# genre $txt4.act2  ou $ent3.res3  avec "$txt" "$act" -- > 2 inconnues
 			# mais on peut le faire si la première variable est connue ; ex "$txt3"
 			#on n'aura plus qu'à chercher le $act ... mais il faut l'implémenter sous P-II 
-			sem= self.client.eval_get_sem(item,"%s.%s.self.sem_liste_concept") 
+			###sem= self.client.eval_get_sem(item,"%s.%s.self.sem_liste_concept") 
 			#C'EST TROP LENT !!!!! C'EST PAS DANS L'ORDRE !!!!
 			#semantique = self.client.eval_get_sem(item,self.sem_liste_concept) #NE RENVOIE PAS $col2 sur AaC, pb sur le dico, manque type ?
 			#sem_poids = semantique + ".val" 
