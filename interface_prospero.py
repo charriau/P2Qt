@@ -190,11 +190,11 @@ class ConnecteurPII (threading.Thread):
 		"""
 		
 		self.m_threadlock.acquire()
-		'''  
-		if data in self.m_cache_fonc.keys():
+		  
+		if sem in self.m_cache_fonc.keys():
 			self.m_threadlock.release()
-			return self.m_cache_fonc[data]
-		'''
+			return self.m_cache_fonc[sem]
+		
 		
 		if not self.connexion : 
 			if not self.connect():
@@ -204,7 +204,7 @@ class ConnecteurPII (threading.Thread):
 		for exp in lexpr :
 			self.send_expression(exp)
 		value = self.get_value()
-		#self.add_cache_fonc(data, value)
+		self.add_cache_fonc(sem, value)
 		self.m_threadlock.release()
 		return value
 
